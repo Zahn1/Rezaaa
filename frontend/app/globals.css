@@ -1,0 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+  background: #000000;
+  overflow: hidden;
+}
+
+/* floating holographic panel drift */
+@keyframes holoDrift {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.holo-drift { animation: holoDrift 7s ease-in-out infinite; }
+.holo-drift-late { animation: holoDrift 9s ease-in-out 1.5s infinite; }
+
+/* clap shockwave screen ripple */
+@keyframes ripple {
+  0% { transform: scale(0.2); opacity: 0.9; }
+  100% { transform: scale(14); opacity: 0; }
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.3); }

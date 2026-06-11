@@ -1,0 +1,34 @@
+services:
+  rezaa-core:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REZAA_PROVIDER=${REZAA_PROVIDER:-auto}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - REZAA_MODEL=${REZAA_MODEL:-claude-opus-4-8}
+      # host Ollama from inside the container:
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      - REZAA_READ_ONLY=1
+      - REZAA_CORS_ORIGINS=http://localhost:3000
+    volumes:
+      - rezaa-data:/srv/rezaa/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  rezaa-ui:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REZAA_BACKEND_URL=http://rezaa-core:8000
+    depends_on:
+      rezaa-core:
+        condition: service_healthy
+
+volumes:
+  rezaa-data:
