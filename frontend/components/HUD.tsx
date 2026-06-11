@@ -201,7 +201,7 @@ export default function HUD() {
 
       {/* center: transcript overlay + command bar */}
       <div className="flex flex-col items-center justify-end gap-3 pb-2">
-        {transcript && coreState === "listening" && (
+        {transcript && (micEnabled || coreState === "listening") && (
           <div className="pointer-events-none rounded border border-energy/30 bg-void/50 px-4 py-1 font-hud text-sm text-energy/90 backdrop-blur">
             “{transcript}”
           </div>
@@ -216,13 +216,22 @@ export default function HUD() {
           <button className="rounded border border-arc/40 bg-arc/10 px-4 font-hud text-xs uppercase tracking-widest text-arc hover:bg-arc/25">
             Send
           </button>
-          {!micEnabled && (
+          {!micEnabled ? (
             <button
               type="button"
               onClick={() => controller.enableAudio()}
               className="rounded border border-energy/40 bg-energy/10 px-4 font-hud text-xs uppercase tracking-widest text-energy hover:bg-energy/25"
             >
               Mic
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => controller.wake()}
+              className="rounded border border-energy/40 bg-energy/10 px-4 font-hud text-xs uppercase tracking-widest text-energy hover:bg-energy/25"
+              title="Force listening mode — then just speak"
+            >
+              Wake
             </button>
           )}
         </form>

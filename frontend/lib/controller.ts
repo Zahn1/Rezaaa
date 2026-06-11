@@ -61,10 +61,30 @@ class RezaaController {
       onSpeakStart: () => useRezaa.getState().setCoreState("speaking"),
       onSpeakEnd: () => useRezaa.getState().setCoreState("idle"),
       onUnsupported: () =>
-        useRezaa.getState().pushLog("SpeechRecognition unsupported in this browser", "system"),
+        useRezaa.getState().pushLog(
+          "SpeechRecognition unsupported in this browser — use Chrome, or the Wake button + typing",
+          "system",
+        ),
+      onError: (err) => {
+        const hints: Record<string, string> = {
+          network: "speech service unreachable (Chrome STT needs internet)",
+          "not-allowed": "microphone blocked for speech — check the address-bar mic icon",
+          "service-not-allowed": "speech service disabled in this browser",
+          "audio-capture": "no usable microphone found",
+        };
+        useRezaa.getState().pushLog(`Voice error: ${hints[err] ?? err}`, "system");
+      },
+      onReady: () =>
+        useRezaa.getState().pushLog("Voice engine online — say “Hey Rezaa”", "system"),
     });
     this.voice.start();
     return true;
+  }
+
+  /** Manual wake — guaranteed path even if the wake word isn't caught. */
+  wake() {
+    if (this.voice) this.voice.wake();
+    else useRezaa.getState().pushLog("Enable the mic first", "system");
   }
 
   private handleClaps(n: number) {

@@ -13,7 +13,13 @@ export interface VoiceCallbacks {
   onSpeakStart: () => void;
   onSpeakEnd: () => void;
   onUnsupported: () => void;
+  onError?: (error: string) => void;
+  onReady?: () => void;
 }
+
+// Recognizers rarely transcribe "Rezaa" literally — accept close variants
+// (reza, rezaa, resa, risa, rissa…) on word boundaries.
+export const WAKE_RE = /\b(hey\s+|ok\s+|hi\s+)?r[aei]+[sz]+s?a+h?\b/i;
 
 export class VoiceSystem {
   private recognition: SR | null = null;
@@ -49,25 +55,38 @@ export class VoiceSystem {
       const final: boolean = result.isFinal;
 
       if (!this.awake) {
-        if (/\b(hey\s+)?r+e+z+a+a*\b/i.test(text)) this.wake();
+        this.cb.onTranscript(text, final); // show what we're hearing pre-wake too
+        if (WAKE_RE.test(text)) this.wake();
         return;
       }
       this.cb.onTranscript(text, final);
       if (final && text) {
-        const cleaned = text.replace(/\b(hey\s+)?r+e+z+a+a*\b/i, "").trim();
+        const cleaned = text.replace(WAKE_RE, "").trim();
         if (cleaned) this.cb.onCommand(cleaned);
         this.resetWakeWindow();
       }
     };
+    this.recognition.onerror = (event: any) => {
+      // 'no-speech' fires constantly in quiet rooms and 'aborted' on restarts
+      if (event.error !== "no-speech" && event.error !== "aborted") {
+        this.cb.onError?.(event.error);
+      }
+    };
     this.recognition.onend = () => {
       if (!this.stopped) {
-        try {
-          this.recognition.start(); // keep listening forever
-        } catch { /* already started */ }
+        // Chrome ends recognition after silence; restart on a tick so we
+        // don't throw "already started"
+        setTimeout(() => {
+          if (this.stopped) return;
+          try {
+            this.recognition.start();
+          } catch { /* already started */ }
+        }, 250);
       }
     };
     try {
       this.recognition.start();
+      this.cb.onReady?.();
     } catch { /* double start */ }
   }
 
